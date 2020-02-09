@@ -11,7 +11,9 @@
 #define ROM_GPIODIR  *((int16_t *)0x080000C6)
 #define ROM_GPIOCNT  *((int16_t *)0x080000C8)
 
-//#define ANALOG
+//JDT uncommented analog and added gpio_irq definition
+#define ANALOG
+#define GPIO_IRQ		0x0100
 
 enum {
 	CMD_ID = 0x00,
@@ -177,6 +179,16 @@ int IWRAM_CODE main(void)
 	REG_TM1CNT_H = TIMER_START | TIMER_IRQ | TIMER_COUNT;
 	REG_TM0CNT_H = TIMER_START;
 
+	//JDT add timer
+	REG_TM3CNT_L = 0;
+	REG_TM3CNT_H = TIMER_START;
+	//Dashdir - right = true, left = false
+	bool dashDir = true;
+	bool sprintWindow = false;
+	bool lastKeyStateRight = false;
+	bool lastKeyStateLeft = false;
+	bool sprintEnabled = false;
+	
 	SoundBias(0);
 	Halt();
 
@@ -222,11 +234,66 @@ int IWRAM_CODE main(void)
 					status.buttons = origin.buttons;
 					status.stick.x = origin.stick.x;
 					status.stick.y = origin.stick.y;
+					
+					//Check if clock is within window before it overflows
+					if(REG_TM3CNT_H >= 48000)
+						sprintWindow = false;
+					
 					#ifdef ANALOG
 					if (buttons & KEY_RIGHT)
-						status.stick.x = origin.stick.x + 100;
+					{
+						if((REG_TM3CNT_L < 48000 && sprintWindow == true && lastKeyStateRight == false && dashDir == true)
+							|| sprintEnabled == true)
+						{
+							sprintEnabled = true;
+							//Timer < 8197 and correct direction bool, +100
+							status.stick.x = origin.stick.x + 100;
+						}
+						else
+						{
+							//Else +65
+							status.stick.x = origin.stick.x + 55;
+						}
+						dashDir = true;
+						lastKeyStateRight = true;
+					}
 					else if (buttons & KEY_LEFT)
-						status.stick.x = origin.stick.x - 100;
+					{
+						if ((REG_TM3CNT_L < 48000 && sprintWindow == true && lastKeyStateLeft == false && dashDir == false)
+							|| sprintEnabled == true)
+						{
+							sprintEnabled = true;
+							//timer < 8197 and correct direction bool
+							status.stick.x = origin.stick.x - 100;
+						}
+						else
+						{
+							//Else -65
+							status.stick.x = origin.stick.x - 55;
+						}
+						dashDir = false;
+						lastKeyStateLeft = true;
+					}
+					else if((buttons & ~KEY_LEFT) && (buttons & ~KEY_RIGHT))
+					{
+						if(lastKeyStateRight == true)
+						{
+							sprintWindow = true;
+							lastKeyStateRight = false;
+							//reset timer and direction bit
+							REG_TM3CNT_L = 0;
+							REG_TM3CNT_H = TIMER_START;
+						}
+						if(lastKeyStateLeft == true)
+						{
+							sprintWindow = true;
+							lastKeyStateLeft = false;
+							//reset timer and direction bit
+							REG_TM3CNT_L = 0;
+							REG_TM3CNT_H = TIMER_START;
+						}
+						sprintEnabled = false;
+					}
 					if (buttons & KEY_UP)
 						status.stick.y = origin.stick.y + 100;
 					else if (buttons & KEY_DOWN)
