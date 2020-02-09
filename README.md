@@ -1,7 +1,7 @@
 # gba-as-controller
-"GBA as Smash controller" forked from Game Boy Interface by extrems
+"GBA as Smash controller" forked from gba-as-controller/Game Boy Interface by extrems
 
-This version builds on the incredible work by extrems to be able to use a gameboy as a gamecube controller.
+This version builds on the incredible work extrems did that allows using a gameboy advance as a gamecube controller.
 
 I've added code for a state machine that handles being able to double tap left or right on the d-pad to activate a sprint mode.
 This is primarily for smash as it allows both precise and rapid movement for easier gameplay.
