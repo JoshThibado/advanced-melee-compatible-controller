@@ -1,5 +1,5 @@
 # gba-as-controller
-"GBA as Smash controller" forked from gba-as-controller/Game Boy Interface by extrems
+"advanced-melee-compatible-controller" forked from gba-as-controller/Game Boy Interface by extrems
 
 This version builds on the incredible work extrems did that allows using a gameboy advance as a gamecube controller.
 
